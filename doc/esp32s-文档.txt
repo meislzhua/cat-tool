@@ -1,0 +1,2 @@
+https://blog.csdn.net/qq_32444825/article/details/81358963 esp32s pin定义
+https://github.com/espressif/arduino-esp32/tree/master/libraries esp32 库文件
