@@ -17,13 +17,19 @@ class CatTaskBase {
      * @brief 任务优先级
      *
      */
-    int priority = configMAX_PRIORITIES - 1;
+    uint8_t priority = 0;
 
     /**
      * @brief 每次执行完任务时,停顿秒数
      *
      */
-    int taskDelay = 1;
+    String taskName = String(esp_random());
+
+    /**
+     * @brief 每次执行完任务时,停顿秒数
+     *
+     */
+    uint32_t taskDelay = 1;
 
     /**
      * @brief 任务循环函数
@@ -32,9 +38,12 @@ class CatTaskBase {
      */
     static void MainTask(void *param) {
         while (true) {
+            // Serial.printf("执行:%s\r\n", ((CatTaskBase *)param)->taskName);
+
             ((CatTaskBase *)param)->handleTask();
             vTaskDelay(((CatTaskBase *)param)->taskDelay / portTICK_RATE_MS);
         }
+        // vTaskDelay(((CatTaskBase *)param)->taskDelay / portTICK_RATE_MS);
     }
     /**
      * @brief 具体任务处理函数
@@ -59,6 +68,6 @@ class CatTaskBase {
      */
     void init() {
         cleanTask();
-        xTaskCreate(&CatTaskBase::MainTask, NULL, 1024 * 8, this, configMAX_PRIORITIES - 1, &this->task);
+        xTaskCreate(&CatTaskBase::MainTask, this->taskName.c_str(), 1024 * 8, this, this->priority, &this->task);
     }
 };

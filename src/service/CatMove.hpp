@@ -2,6 +2,8 @@
 #pragma once
 #include <ArduinoJson.h>
 #include <EventRegister.h>
+#include <Stepper.h>
+#include <config.h>
 
 #include "base/CatQueue.hpp"
 
@@ -24,20 +26,6 @@
  ** ledc: 14 => Group: 1, Channel: 6, Timer: 3
  ** ledc: 15 => Group: 1, Channel: 7, Timer: 3
  */
-
-#define LEFT_LEDC_NUM 14  //左轮PWM调速通道
-#define LEFT_PIN_PWM 12   //左轮PWM调速针脚
-#define LEFT_PIN1 13      //左轮控制针脚-1
-#define LEFT_PIN2 15      //左轮控制针脚-2
-
-#define RIGHT_LEDC_NUM 15  //右轮PWM调速通道
-#define RIGHT_PIN_PWM 4    //右轮PWM调速针脚
-#define RIGHT_PIN1 2       //右轮控制针脚-1
-#define RIGHT_PIN2 14      //右轮控制针脚-2
-
-#define PWM_RESOLUTION 10                    // pwm分辨率
-#define PWM_FREQUENCY 1000                   // pwm分辨率
-#define PWM_MAX ((1 << PWM_RESOLUTION) - 1)  // pwm分辨率的最大值
 
 /**
  * @brief 普通马达控制类(L298N)
@@ -88,6 +76,7 @@ class CatMoveClass : public CatQueueBase {
    public:
     NormalMotor leftMotor = NormalMotor(LEFT_PIN1, LEFT_PIN2, LEFT_PIN_PWM, LEFT_LEDC_NUM);
     NormalMotor rightMotor = NormalMotor(RIGHT_PIN1, RIGHT_PIN2, RIGHT_PIN_PWM, RIGHT_LEDC_NUM);
+    Stepper foodMotor = Stepper(32 * 64, STEPPER_FOOD_PIN1, STEPPER_FOOD_PIN3, STEPPER_FOOD_PIN2, STEPPER_FOOD_PIN4);
 
     void init() {
         CatQueueBase::init();
@@ -137,6 +126,24 @@ class CatMoveClass : public CatQueueBase {
             if (t > 100) t = 100;
             if (t < 0) t = 0;
             this->rightMotor.speed(t);
+        }
+
+        //处理食物步进电机速度消息
+        if (doc.containsKey("fsp")) {
+            Serial.printf("电机速度:%d\n", doc["fsp"].as<int>());
+
+            this->foodMotor.setSpeed(doc["fsp"].as<int>());
+        }
+
+        //处理食物步进电机移动消息
+        if (doc.containsKey("fs")) {
+            Serial.printf("电机转动:%d\n", doc["fs"].as<int>());
+
+            this->foodMotor.step(-doc["fs"].as<int>());
+            digitalWrite(STEPPER_FOOD_PIN1, LOW);
+            digitalWrite(STEPPER_FOOD_PIN2, LOW);
+            digitalWrite(STEPPER_FOOD_PIN3, LOW);
+            digitalWrite(STEPPER_FOOD_PIN4, LOW);
         }
     }
 

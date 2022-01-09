@@ -2,6 +2,7 @@
 #pragma once
 #include <ArduinoJson.h>
 #include <EventRegister.h>
+#include <config.h>
 
 #include "base/CatQueue.hpp"
 

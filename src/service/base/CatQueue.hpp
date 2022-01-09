@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <EventRegister.h>
 
+#include "../CatEvent.hpp"
 #include "CatTask.hpp"
 
 /**

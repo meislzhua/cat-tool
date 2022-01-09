@@ -4,4 +4,6 @@
 
 #define REGISTER_CATCAM 3
 
-#define REGISTER_MAX_NUM 4
+#define REGISTER_DEVICE_ID 4
+
+#define REGISTER_MAX_NUM 5

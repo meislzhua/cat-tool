@@ -4,25 +4,9 @@
 
 #include "CatNetwork.hpp"
 #include "base/CatQueue.hpp"
+#include "config.h"
 #include "esp_camera.h"
 
-#define PWDN_GPIO_NUM 32
-#define RESET_GPIO_NUM -1
-#define XCLK_GPIO_NUM 0
-#define SIOD_GPIO_NUM 26
-#define SIOC_GPIO_NUM 27
-
-#define Y9_GPIO_NUM 35
-#define Y8_GPIO_NUM 34
-#define Y7_GPIO_NUM 39
-#define Y6_GPIO_NUM 36
-#define Y5_GPIO_NUM 21
-#define Y4_GPIO_NUM 19
-#define Y3_GPIO_NUM 18
-#define Y2_GPIO_NUM 5
-#define VSYNC_GPIO_NUM 25
-#define HREF_GPIO_NUM 23
-#define PCLK_GPIO_NUM 22
 /**
  * @brief 摄像头控制类
  *
@@ -34,13 +18,28 @@ class CatCamClass : public CatQueueBase {
      *
      */
     bool isSendLoopOpen = false;
-
+    unsigned long lastCamTime = 0;
+    uint8_t imageMaxDelay = 50;
     void handleQueue(DynamicJsonDocument& doc) {
         Serial.printf("接受到摄像头事件\n");
 
         if (doc.containsKey("o")) {
             this->isSendLoopOpen = doc["o"].as<int>();
             Serial.printf("开关:%d\n", this->isSendLoopOpen);
+        }
+
+        if (doc.containsKey("q")) {
+            sensor_t* s = esp_camera_sensor_get();
+            s->set_quality(s, doc["q"].as<int>());
+        }
+
+        if (doc.containsKey("s")) {
+            sensor_t* s = esp_camera_sensor_get();
+            s->set_framesize(s, (framesize_t)doc["s"].as<int>());
+        }
+
+        if (doc.containsKey("d")) {
+            this->imageMaxDelay = doc["d"].as<int>();
         }
     }
 
@@ -69,9 +68,9 @@ class CatCamClass : public CatQueueBase {
         config.pin_reset = RESET_GPIO_NUM;
         config.xclk_freq_hz = 20000000;
         config.pixel_format = PIXFORMAT_JPEG;
-        config.frame_size = FRAMESIZE_HD;
-        config.jpeg_quality = 0;
-        config.fb_count = 3;
+        config.frame_size = FRAMESIZE_HVGA;
+        config.jpeg_quality = 20;
+        config.fb_count = 2;
 
         esp_camera_init(&config);
     }
@@ -91,7 +90,8 @@ class CatCamClass : public CatQueueBase {
 
     void handleTask() {
         CatQueueBase::handleTask();
-        if (this->isSendLoopOpen) {
+        if (this->isSendLoopOpen && millis() - this->lastCamTime > this->imageMaxDelay) {
+            this->lastCamTime = millis();
             this->sendFrame();
         }
     }
