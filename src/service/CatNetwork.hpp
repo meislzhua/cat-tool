@@ -7,7 +7,7 @@
 
 #include "CatEvent.hpp"
 #include "base/CatTask.hpp"
-#define serverIP "192.168.0.49"                          // 服务器的地址
+#define serverIP "139.9.54.205"                          // 服务器的地址
 #define serverPort 8431                                  // 服务器的地址
 #define ConnectMaxRetryCount 10                          // 通信重连最大间隔秒数计数
 #define WIFI_MAX_RETRY_COUNT 10                          // WIFI重连最大间隔秒数计数
