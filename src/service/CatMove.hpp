@@ -2,7 +2,7 @@
 #pragma once
 #include <ArduinoJson.h>
 #include <EventRegister.h>
-#include <Stepper.h>
+#include <Ticker.h>
 #include <config.h>
 
 #include "base/CatQueue.hpp"
@@ -38,6 +38,10 @@ class NormalMotor {
     uint8_t pin2;
     uint8_t speedPin;
     uint8_t ledcNum;
+    u_long lastMoveTime = 0;
+    u_long checkStopDelay = 500;
+
+    Ticker checkStopTicker = Ticker();
 
     NormalMotor(uint8_t pin1, uint8_t pin2, uint8_t speedPin, uint8_t ledcNum) {
         this->pin1 = pin1;
@@ -58,14 +62,33 @@ class NormalMotor {
     void forward() {
         digitalWrite(this->pin1, HIGH);
         digitalWrite(this->pin2, LOW);
+        this->lastMoveTime = millis();
+        Serial.printf("轮子前进\n");
+        NormalMotor::checkStop(this);
     }
     void back() {
         digitalWrite(this->pin1, LOW);
         digitalWrite(this->pin2, HIGH);
+        this->lastMoveTime = millis();
+        Serial.printf("轮子后退\n");
+        NormalMotor::checkStop(this);
     }
     void stop() {
         digitalWrite(this->pin1, LOW);
         digitalWrite(this->pin2, LOW);
+        this->lastMoveTime = 0;
+        Serial.printf("轮子停止\n");
+    }
+
+    static void checkStop(NormalMotor *motor) {
+        if (motor->checkStopDelay) {
+            u_long now = millis();
+            if (now - motor->lastMoveTime > motor->checkStopDelay) {
+                motor->stop();
+            } else {
+                motor->checkStopTicker.once_ms(motor->checkStopDelay - (now - motor->lastMoveTime) + 1, &NormalMotor::checkStop, motor);
+            }
+        }
     }
 
     void speed(uint8_t speed) {
