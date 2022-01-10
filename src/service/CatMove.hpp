@@ -6,6 +6,7 @@
 #include <config.h>
 
 #include "base/CatQueue.hpp"
+#include "base/CatTask.hpp"
 
 /*
  * LEDC Chan to Group/Channel/Timer Mapping
@@ -72,16 +73,97 @@ class NormalMotor {
     }
 };
 
+class StepperMotor : public CatQueueBase {
+    int8_t pin1;
+    int8_t pin2;
+    int8_t pin3;
+    int8_t pin4;
+    int delay;
+    int8_t status = 0;
+
+    void _step(int count) {
+        int8_t status = this->status;
+        int8_t s[8][4] = {
+            {HIGH, LOW, LOW, LOW},
+            {HIGH, HIGH, LOW, LOW},
+            {LOW, HIGH, LOW, LOW},
+            {LOW, HIGH, HIGH, LOW},
+            {LOW, LOW, HIGH, LOW},
+            {LOW, LOW, HIGH, HIGH},
+            {LOW, LOW, LOW, HIGH},
+            {HIGH, LOW, LOW, HIGH},
+        };
+        while (count) {
+            //状态移动
+            digitalWrite(this->pin1, s[status][0]);
+            digitalWrite(this->pin2, s[status][1]);
+            digitalWrite(this->pin3, s[status][2]);
+            digitalWrite(this->pin4, s[status][3]);
+
+            //状态确定
+            if (count > 0) {
+                count--;
+                status = (status + 1) & 0x07;
+            } else {
+                count++;
+                status = (status - 1) & 0x07;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(this->delay));
+        }
+        digitalWrite(this->pin1, LOW);
+        digitalWrite(this->pin2, LOW);
+        digitalWrite(this->pin3, LOW);
+        digitalWrite(this->pin4, LOW);
+
+        this->status = status;
+    }
+
+    void handleQueue(DynamicJsonDocument &doc) {
+        this->_step(doc["step"].as<int>());
+    }
+    uint8_t getQueueId() { return 0; }
+
+   public:
+    void step(int count) {
+        DynamicJsonDocument *doc = new DynamicJsonDocument(20);
+        (*doc)["step"] = count;
+        this->push(doc);
+    }
+
+    void setDelay(int delay) {
+        this->delay = delay;
+    }
+
+    StepperMotor(int8_t pin1, int8_t pin2, int8_t pin3, int8_t pin4, int delay) {
+        this->pin1 = pin1;
+        this->pin2 = pin2;
+        this->pin3 = pin3;
+        this->pin4 = pin4;
+
+        this->delay = delay;
+    }
+
+    void init() {
+        CatQueueBase::init();
+        pinMode(this->pin1, OUTPUT);
+        pinMode(this->pin2, OUTPUT);
+        pinMode(this->pin3, OUTPUT);
+        pinMode(this->pin4, OUTPUT);
+    }
+};
+
 class CatMoveClass : public CatQueueBase {
    public:
     NormalMotor leftMotor = NormalMotor(LEFT_PIN1, LEFT_PIN2, LEFT_PIN_PWM, LEFT_LEDC_NUM);
     NormalMotor rightMotor = NormalMotor(RIGHT_PIN1, RIGHT_PIN2, RIGHT_PIN_PWM, RIGHT_LEDC_NUM);
-    Stepper foodMotor = Stepper(32 * 64, STEPPER_FOOD_PIN1, STEPPER_FOOD_PIN3, STEPPER_FOOD_PIN2, STEPPER_FOOD_PIN4);
+    StepperMotor foodMotor = StepperMotor(STEPPER_FOOD_PIN1, STEPPER_FOOD_PIN2, STEPPER_FOOD_PIN3, STEPPER_FOOD_PIN4, 10);
 
     void init() {
         CatQueueBase::init();
         this->leftMotor.init();
         this->rightMotor.init();
+        this->foodMotor.init();
     }
 
     uint8_t getQueueId() {
@@ -129,10 +211,10 @@ class CatMoveClass : public CatQueueBase {
         }
 
         //处理食物步进电机速度消息
-        if (doc.containsKey("fsp")) {
-            Serial.printf("电机速度:%d\n", doc["fsp"].as<int>());
+        if (doc.containsKey("fsd")) {
+            Serial.printf("电机延迟:%d\n", doc["fsd"].as<int>());
 
-            this->foodMotor.setSpeed(doc["fsp"].as<int>());
+            this->foodMotor.setDelay(doc["fsd"].as<int>());
         }
 
         //处理食物步进电机移动消息
@@ -140,10 +222,6 @@ class CatMoveClass : public CatQueueBase {
             Serial.printf("电机转动:%d\n", doc["fs"].as<int>());
 
             this->foodMotor.step(-doc["fs"].as<int>());
-            digitalWrite(STEPPER_FOOD_PIN1, LOW);
-            digitalWrite(STEPPER_FOOD_PIN2, LOW);
-            digitalWrite(STEPPER_FOOD_PIN3, LOW);
-            digitalWrite(STEPPER_FOOD_PIN4, LOW);
         }
     }
 

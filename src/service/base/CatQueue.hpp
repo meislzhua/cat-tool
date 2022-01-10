@@ -5,6 +5,7 @@
 #include "../CatEvent.hpp"
 #include "CatTask.hpp"
 
+// todo 修改cat依赖
 /**
  * @brief 消息对列基类,继承即可获得消息队列功能
  *
@@ -43,5 +44,9 @@ class CatQueueBase : public CatTaskBase {
         CatTaskBase::init();
         //在事件中心注册,当发生发生相应事件时,事件加入到队列
         CatEvent.registerEvent(this->getQueueId(), &this->queue);
+    }
+
+    void push(void *event) {
+        xQueueSend(this->queue, &event, 0);
     }
 };
