@@ -17,7 +17,7 @@
 #define MESSAGE_TYPE_JSON 0  // 传输数据类型:JSON
 #define MESSAGE_TYPE_JPEG 1  // 传输数据类型:JPEG
 
-class CatNetworkClass : public CatTaskBase {
+class CatNetworkClass : public CatTask {
     TaskHandle_t receiveTask = NULL;  // wifi信息接受器
     WiFiClient client;                // wifi连接
 
@@ -39,7 +39,7 @@ class CatNetworkClass : public CatTaskBase {
     void connect() { WiFi.begin(this->ssid, this->password); }
 
     void init() {
-        CatTaskBase::init();
+        CatTask::init();
         this->connect();
     }
 
@@ -153,7 +153,7 @@ class CatNetworkClass : public CatTaskBase {
      *
      */
     void cleanTask() {
-        CatTaskBase::cleanTask();
+        CatTask::cleanTask();
         client.stop();
     }
 

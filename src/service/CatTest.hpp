@@ -6,7 +6,7 @@
 
 #include "base/CatQueue.hpp"
 
-class Test : public CatQueueBase {
+class Test : public CatQueue {
     void handleQueue(DynamicJsonDocument &doc) {
         String json;
         serializeJson(doc, json);

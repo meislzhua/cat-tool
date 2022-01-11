@@ -1,11 +1,11 @@
 #pragma once
 #include <ArduinoJson.h>
 #include <EventRegister.h>
-
+#include <string.h>
 /**
  * @brief 任务基类
  */
-class CatTaskBase {
+class CatTask {
    public:
     /**
      * @brief 任务线程句柄
@@ -38,12 +38,12 @@ class CatTaskBase {
      */
     static void MainTask(void *param) {
         while (true) {
-            // Serial.printf("执行:%s\r\n", ((CatTaskBase *)param)->taskName);
+            // Serial.printf("执行:%s\r\n", ((CatTask *)param)->taskName);
 
-            ((CatTaskBase *)param)->handleTask();
-            vTaskDelay(((CatTaskBase *)param)->taskDelay / portTICK_RATE_MS);
+            ((CatTask *)param)->handleTask();
+            vTaskDelay(((CatTask *)param)->taskDelay / portTICK_RATE_MS);
         }
-        // vTaskDelay(((CatTaskBase *)param)->taskDelay / portTICK_RATE_MS);
+        // vTaskDelay(((CatTask *)param)->taskDelay / portTICK_RATE_MS);
     }
     /**
      * @brief 具体任务处理函数
@@ -52,22 +52,31 @@ class CatTaskBase {
     virtual void handleTask() = 0;
 
     /**
-     * @brief 清理任务
-     *
-     */
-    void cleanTask() {
-        if (this->task != NULL) {
-            vTaskDelete(&this->task);
-            this->task = NULL;
-        }
-    }
-
-    /**
      * @brief 初始化任务,并新建线程
      *
      */
     void init() {
+        Serial.printf("执行初始化:%s\n", this->taskName.c_str());
+
         cleanTask();
-        xTaskCreate(&CatTaskBase::MainTask, this->taskName.c_str(), 1024 * 8, this, this->priority, &this->task);
+        xTaskCreate(&CatTask::MainTask, this->taskName.c_str(), 1024 * 8, this, this->priority, &this->task);
+    }
+
+   protected:
+    bool isActive() {
+        return this->task != NULL;
+    }
+
+    /**
+     * @brief 清理任务
+     *
+     */
+    void cleanTask() {
+        Serial.printf("清理任务:%s\n", this->taskName.c_str());
+
+        if (this->task != NULL) {
+            vTaskDelete(this->task);
+            this->task = NULL;
+        }
     }
 };

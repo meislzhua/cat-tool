@@ -5,7 +5,6 @@
 #include "esp_task_wdt.h"
 #include "service/CatEvent.hpp"
 #include "service/CatNetwork.hpp"
-#include "service/CatTest.hpp"
 
 #if defined(CAT_TOOL_ESP32_CAM)
 #include "service/CatCam.hpp"
@@ -15,23 +14,22 @@
 #include "service/CatMove.hpp"
 #endif
 
-Test tt;
 void setup() {
     // put your setup code here, to run once:
     esp_task_wdt_deinit();
     esp_task_wdt_init(60, true);
     Serial.begin(115200);
     Serial.setDebugOutput(true);
-
     CatNetwork.init();
-    tt.init();
 
 #if defined(CAT_TOOL_ESP32_CAM)
     CatCam.init();
+    CatEvent.registerEvent(&CatCam);
 #endif
 
 #if defined(CAT_TOOL_ESP32_MOTOR)
     CatMove.init();
+    CatEvent.registerEvent(&CatMove);
 #endif
 
     Serial.printf("初始化完成\r\n");

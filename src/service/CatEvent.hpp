@@ -1,6 +1,9 @@
 #pragma once
 #include <ArduinoJson.h>
 #include <EventRegister.h>
+
+#include "base/CatQueue.hpp"
+
 /**
  * @brief 事件注册分发类
  */
@@ -8,7 +11,7 @@ class CatEventClass {
     /**
      * @brief 已注册的时间列表
      */
-    QueueHandle_t *regedit[REGISTER_MAX_NUM]{NULL};
+    CatQueue *regedit[REGISTER_MAX_NUM]{NULL};
 
    public:
     /**
@@ -16,8 +19,8 @@ class CatEventClass {
      * @param code 事件码,在<EventRegister.h>中定义
      * @param queue 事件队列
      */
-    void registerEvent(int code, QueueHandle_t *queue) {
-        this->regedit[code] = queue;
+    void registerEvent(CatQueue *queue) {
+        this->regedit[queue->getQueueId()] = queue;
     }
 
     /**
@@ -29,8 +32,7 @@ class CatEventClass {
 
         if (code != 0 && this->regedit[code]) {  //发现对应注册事件
             // Serial.printf("发现注册:[%d] \n", doc);
-            QueueHandle_t *queue = this->regedit[code];
-            xQueueSend(*queue, &doc, 0);
+            this->regedit[code]->push(doc);
         } else {  //无对应注册事件
             Serial.printf("无注册:%d\n", code);
             delete doc;

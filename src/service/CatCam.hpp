@@ -11,7 +11,7 @@
  * @brief 摄像头控制类
  *
  */
-class CatCamClass : public CatQueueBase {
+class CatCamClass : public CatQueue {
    public:
     /**
      * @brief 是否循环发送图像信息
@@ -46,7 +46,7 @@ class CatCamClass : public CatQueueBase {
     uint8_t getQueueId() { return REGISTER_CATCAM; };
 
     void init() {
-        CatQueueBase::init();
+        CatQueue::init();
         camera_config_t config;
         config.ledc_channel = LEDC_CHANNEL_0;
         config.ledc_timer = LEDC_TIMER_0;
@@ -89,7 +89,7 @@ class CatCamClass : public CatQueueBase {
     }
 
     void handleTask() {
-        CatQueueBase::handleTask();
+        CatQueue::handleTask();
         if (this->isSendLoopOpen && millis() - this->lastCamTime > this->imageMaxDelay) {
             this->lastCamTime = millis();
             this->sendFrame();

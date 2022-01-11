@@ -63,21 +63,18 @@ class NormalMotor {
         digitalWrite(this->pin1, HIGH);
         digitalWrite(this->pin2, LOW);
         this->lastMoveTime = millis();
-        Serial.printf("轮子前进\n");
         NormalMotor::checkStop(this);
     }
     void back() {
         digitalWrite(this->pin1, LOW);
         digitalWrite(this->pin2, HIGH);
         this->lastMoveTime = millis();
-        Serial.printf("轮子后退\n");
         NormalMotor::checkStop(this);
     }
     void stop() {
         digitalWrite(this->pin1, LOW);
         digitalWrite(this->pin2, LOW);
         this->lastMoveTime = 0;
-        Serial.printf("轮子停止\n");
     }
 
     static void checkStop(NormalMotor *motor) {
@@ -96,7 +93,7 @@ class NormalMotor {
     }
 };
 
-class StepperMotor : public CatQueueBase {
+class StepperMotor : public CatQueue {
     int8_t pin1;
     int8_t pin2;
     int8_t pin3;
@@ -168,7 +165,7 @@ class StepperMotor : public CatQueueBase {
     }
 
     void init() {
-        CatQueueBase::init();
+        CatQueue::init();
         pinMode(this->pin1, OUTPUT);
         pinMode(this->pin2, OUTPUT);
         pinMode(this->pin3, OUTPUT);
@@ -176,14 +173,14 @@ class StepperMotor : public CatQueueBase {
     }
 };
 
-class CatMoveClass : public CatQueueBase {
+class CatMoveClass : public CatQueue {
    public:
     NormalMotor leftMotor = NormalMotor(LEFT_PIN1, LEFT_PIN2, LEFT_PIN_PWM, LEFT_LEDC_NUM);
     NormalMotor rightMotor = NormalMotor(RIGHT_PIN1, RIGHT_PIN2, RIGHT_PIN_PWM, RIGHT_LEDC_NUM);
     StepperMotor foodMotor = StepperMotor(STEPPER_FOOD_PIN1, STEPPER_FOOD_PIN2, STEPPER_FOOD_PIN3, STEPPER_FOOD_PIN4, 10);
 
     void init() {
-        CatQueueBase::init();
+        CatQueue::init();
         this->leftMotor.init();
         this->rightMotor.init();
         this->foodMotor.init();
@@ -235,15 +232,11 @@ class CatMoveClass : public CatQueueBase {
 
         //处理食物步进电机速度消息
         if (doc.containsKey("fsd")) {
-            Serial.printf("电机延迟:%d\n", doc["fsd"].as<int>());
-
             this->foodMotor.setDelay(doc["fsd"].as<int>());
         }
 
         //处理食物步进电机移动消息
         if (doc.containsKey("fs")) {
-            Serial.printf("电机转动:%d\n", doc["fs"].as<int>());
-
             this->foodMotor.step(-doc["fs"].as<int>());
         }
     }
